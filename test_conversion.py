@@ -46,23 +46,29 @@ def test_imports():
         print(f"❌ Import test failed: {e}")
         return False
 
-def test_network_server():
-    """Test network server (without actually starting it)"""
-    print("\nTesting NetworkServer...")
+def test_enhanced_functionality():
+    """Test the enhanced functionality"""
+    print("\nTesting enhanced functionality...")
     try:
-        from src.network_server import NetworkServer
-        server = NetworkServer(port=8080)
-        print("✓ NetworkServer created successfully")
+        from src.report_form import NotificationManager, ReportForm
+        print("✓ ReportForm imported successfully")
         
-        # Test without starting
-        assert not server.is_running
-        print("✓ Server is not running initially")
+        from src.data_viewer import DataGrid, ClientDataViewer
+        print("✓ DataViewer imported successfully")
         
-        print("✅ NetworkServer tests passed!")
+        from src.builder import BuilderInterface, BuilderConfig
+        print("✓ Builder imported successfully")
+        
+        # Test config
+        config = BuilderConfig()
+        assert config.server_ip == "127.0.0.1"
+        print("✓ BuilderConfig created successfully")
+        
+        print("✅ Enhanced functionality tests passed!")
         return True
         
     except Exception as e:
-        print(f"❌ NetworkServer test failed: {e}")
+        print(f"❌ Enhanced functionality test failed: {e}")
         return False
 
 def main():
@@ -71,7 +77,7 @@ def main():
     
     tests = [
         test_imports,
-        test_network_server
+        test_enhanced_functionality
     ]
     
     passed = 0

